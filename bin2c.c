@@ -5,59 +5,61 @@
 
 int main(int argc, char* argv[])
 {
-    if (argc < 4)
-    {
-        fprintf(stderr, "Usage: %s <input file path> <output file path> <array name>\n", argv[0]);
-        return 1;
-    }
+	const char* filename = strrchr(filename, '\\') + 1;
 
-    FILE* fInput;
-    fopen_s(&fInput, argv[1], "rb");
+	if (argc < 4)
+	{
+		fprintf(stderr, "Usage: %s <input file path> <output file path> <array name>\n", filename);
+		return 1;
+	}
 
-    if (!fInput)
-    {
-        fprintf(stderr, "%s: can't open %s for reading\n", argv[0], argv[1]);
-        return 2;
-    }
+	FILE* fInput;
+	fopen_s(&fInput, argv[1], "rb");
 
-    fseek(fInput, 0, SEEK_END);
-    const long long fileSize = ftell(fInput);
-    fseek(fInput, 0, SEEK_SET);
+	if (!fInput)
+	{
+		fprintf(stderr, "%s: can't open %s for reading\n", filename, argv[1]);
+		return 2;
+	}
 
-    unsigned char* buffer = (unsigned char*)malloc(fileSize);
-    if (!buffer)
-    {
-        fprintf(stderr, "%s: failed to allocate memory\n", argv[0]);
-        fclose(fInput);
-        return 3;
-    }
+	fseek(fInput, 0, SEEK_END);
+	const long long fileSize = ftell(fInput);
+	fseek(fInput, 0, SEEK_SET);
 
-    fread(buffer, fileSize, 1, fInput);
-    fclose(fInput);
+	unsigned char* buffer = (unsigned char*)malloc(fileSize);
+	if (!buffer)
+	{
+		fprintf(stderr, "%s: failed to allocate memory\n", filename);
+		fclose(fInput);
+		return 3;
+	}
 
-    FILE* fOutput;
-    fopen_s(&fOutput, argv[2], "w");
+	fread(buffer, fileSize, 1, fInput);
+	fclose(fInput);
 
-    if (!fOutput)
-    {
-        fprintf(stderr, "%s: can't open %s for writing\n", argv[0], argv[2]);
-        free(buffer);
-        return 4;
-    }
+	FILE* fOutput;
+	fopen_s(&fOutput, argv[2], "w");
 
-    const char* arrayName = argv[3];
+	if (!fOutput)
+	{
+		fprintf(stderr, "%s: can't open %s for writing\n", filename, argv[2]);
+		free(buffer);
+		return 4;
+	}
 
-    fprintf(fOutput, "long long %s_length = %i;\n", arrayName, fileSize);
-    fprintf(fOutput, "unsigned char %s[] =\n{", arrayName);
+	const char* arrayName = argv[3];
 
-    for (long long i = 0; i < fileSize; ++i)
-    {
-        if (i % 16 == 0)
-            fprintf(fOutput, "\b\n\t");
-        fprintf(fOutput, "0x%02X, ", buffer[i] & 0xFF);
-    }
+	fprintf(fOutput, "long long %s_length = %i;\n", arrayName, fileSize);
+	fprintf(fOutput, "unsigned char %s[] =\n{", arrayName);
 
-	  fprintf(fOutput, "\b\b\n};");
-    fclose(fOutput);
-    free(buffer);
+	for (long long i = 0; i < fileSize; ++i)
+	{
+		if (i % 16 == 0)
+			fprintf(fOutput, "\b\n\t");
+		fprintf(fOutput, "0x%02X, ", buffer[i] & 0xFF);
+	}
+
+	fprintf(fOutput, "\b\b\n};");
+	fclose(fOutput);
+	free(buffer);
 }
